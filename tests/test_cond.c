@@ -10,10 +10,11 @@
 #include <errno.h>
 #include "evco.h"
 
+int count;
 
 void producer(evco_cond_t *pcond)
 {
-	while ( 1 ) {
+	while ( count > 0 ) {
 		evco_sleep(1000);
 		evco_cond_signal(pcond);
 		printf("producer: evco_cond_signal..\n");
@@ -41,6 +42,7 @@ void consumer(consumer_args_t *pargs)
 			printf("consumer%02d: evco_cond_timedwait failed...\n", pargs->index);
 		}
 	}
+	count--;
 	printf("consumer%02d: exitting...\n", pargs->index);
 	free(pargs);
 }
@@ -49,13 +51,15 @@ int main(int argc, char *argv[])
 {
 	evsc_t *psc = evsc_alloc();
 	evco_cond_t *pcond = evco_cond_alloc();
-	int x = 0;
+	int x = 5;
+
+	count = x;
 
 	evco_create(psc, STACK_SIZE, (evco_func)producer, pcond);
 	
-	for ( x = 0; x < 5; x ++ ) {
+	for ( ; x > 0; x-- ) {
 		consumer_args_t *pargs = (consumer_args_t *)malloc(sizeof(consumer_args_t));
-		pargs->index = x + 1;
+		pargs->index = x;
 		pargs->pcond = pcond;
 		evco_create(psc, STACK_SIZE, (evco_func)consumer, pargs);
 	}
