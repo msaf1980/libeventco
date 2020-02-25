@@ -28,6 +28,7 @@ AC_CHECK_FUNCS([socket])
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
+                 bench/Makefile
                  tests/Makefile])
 
 #debug options support

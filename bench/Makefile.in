@@ -86,9 +86,8 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
-noinst_PROGRAMS = test_echo$(EXEEXT) test_cond$(EXEEXT) \
-	test_proxy$(EXEEXT)
-subdir = tests
+noinst_PROGRAMS = bench_yield$(EXEEXT)
+subdir = bench
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -98,15 +97,9 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_test_cond_OBJECTS = test_cond.$(OBJEXT)
-test_cond_OBJECTS = $(am_test_cond_OBJECTS)
-test_cond_LDADD = $(LDADD)
-am_test_echo_OBJECTS = test_echo.$(OBJEXT)
-test_echo_OBJECTS = $(am_test_echo_OBJECTS)
-test_echo_LDADD = $(LDADD)
-am_test_proxy_OBJECTS = test_proxy.$(OBJEXT)
-test_proxy_OBJECTS = $(am_test_proxy_OBJECTS)
-test_proxy_LDADD = $(LDADD)
+am_bench_yield_OBJECTS = bench_yield.$(OBJEXT) benchutils.$(OBJEXT)
+bench_yield_OBJECTS = $(am_bench_yield_OBJECTS)
+bench_yield_LDADD = $(LDADD)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -122,8 +115,8 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/test_cond.Po \
-	./$(DEPDIR)/test_echo.Po ./$(DEPDIR)/test_proxy.Po
+am__depfiles_remade = ./$(DEPDIR)/bench_yield.Po \
+	./$(DEPDIR)/benchutils.Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -137,10 +130,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(test_cond_SOURCES) $(test_echo_SOURCES) \
-	$(test_proxy_SOURCES)
-DIST_SOURCES = $(test_cond_SOURCES) $(test_echo_SOURCES) \
-	$(test_proxy_SOURCES)
+SOURCES = $(bench_yield_SOURCES)
+DIST_SOURCES = $(bench_yield_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -257,9 +248,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AUTOMAKE_OPTIONS = foreign
 INCLUDES = -I../include
-test_echo_SOURCES = test_echo.c
-test_cond_SOURCES = test_cond.c
-test_proxy_SOURCES = test_proxy.c
+bench_yield_SOURCES = bench_yield.c benchutils.c
 all: all-am
 
 .SUFFIXES:
@@ -273,9 +262,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign tests/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign bench/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign tests/Makefile
+	  $(AUTOMAKE) --foreign bench/Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
 	  *config.status*) \
@@ -297,17 +286,9 @@ $(am__aclocal_m4_deps):
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 
-test_cond$(EXEEXT): $(test_cond_OBJECTS) $(test_cond_DEPENDENCIES) $(EXTRA_test_cond_DEPENDENCIES) 
-	@rm -f test_cond$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(test_cond_OBJECTS) $(test_cond_LDADD) $(LIBS)
-
-test_echo$(EXEEXT): $(test_echo_OBJECTS) $(test_echo_DEPENDENCIES) $(EXTRA_test_echo_DEPENDENCIES) 
-	@rm -f test_echo$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(test_echo_OBJECTS) $(test_echo_LDADD) $(LIBS)
-
-test_proxy$(EXEEXT): $(test_proxy_OBJECTS) $(test_proxy_DEPENDENCIES) $(EXTRA_test_proxy_DEPENDENCIES) 
-	@rm -f test_proxy$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(test_proxy_OBJECTS) $(test_proxy_LDADD) $(LIBS)
+bench_yield$(EXEEXT): $(bench_yield_OBJECTS) $(bench_yield_DEPENDENCIES) $(EXTRA_bench_yield_DEPENDENCIES) 
+	@rm -f bench_yield$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(bench_yield_OBJECTS) $(bench_yield_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -315,9 +296,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_cond.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_echo.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_proxy.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bench_yield.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/benchutils.Po@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
 	@$(MKDIR_P) $(@D)
@@ -463,9 +443,8 @@ clean: clean-am
 clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-am
-		-rm -f ./$(DEPDIR)/test_cond.Po
-	-rm -f ./$(DEPDIR)/test_echo.Po
-	-rm -f ./$(DEPDIR)/test_proxy.Po
+		-rm -f ./$(DEPDIR)/bench_yield.Po
+	-rm -f ./$(DEPDIR)/benchutils.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -511,9 +490,8 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-		-rm -f ./$(DEPDIR)/test_cond.Po
-	-rm -f ./$(DEPDIR)/test_echo.Po
-	-rm -f ./$(DEPDIR)/test_proxy.Po
+		-rm -f ./$(DEPDIR)/bench_yield.Po
+	-rm -f ./$(DEPDIR)/benchutils.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
