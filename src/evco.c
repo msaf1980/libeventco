@@ -14,6 +14,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #endif
+#include <unistd.h>
 
 #include "list.h"
 #include "hashtab.h"
@@ -22,7 +23,7 @@
 
 #ifdef DEBUG
     #define evco_debug(fmt, ...) \
-            printf("[%s:%04d]"fmt, __FILE__, __LINE__, ##__VA_ARGS__)
+            fprintf(stderr, "[%s:%04d]"fmt, __FILE__, __LINE__, ##__VA_ARGS__)
 #else
     #define evco_debug(fmt, ...)
 #endif
@@ -274,6 +275,11 @@ static void __evsc_timer_dispatch(int fd, short events, void *vitem)
 	pco->flag_iotimeout = 1;
 	__evco_resume(pco);
 	__evco_cond_ready_clear(psc);
+}
+
+void evco_yield()
+{
+	__evco_yield();
 }
 
 void evco_sleep(int msec)

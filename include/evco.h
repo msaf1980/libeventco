@@ -22,6 +22,8 @@ typedef void (*evco_func)(void *);
 
 evco_t *evco_create(evsc_t *psc, size_t stack_size, evco_func func, void *args);
 
+void evco_yield();
+
 void evco_sleep(int msec);
 
 int evco_timed_connect(int fd, const struct sockaddr *addr, socklen_t addrlen, int msec);
