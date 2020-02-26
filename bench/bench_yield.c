@@ -22,8 +22,6 @@ typedef struct consumer_args {
 
 void consumer(consumer_args_t *pargs)
 {
-	int ret = 0;
-	int i = 0;
 	for ( ; iter_count > 0; iter_count-- ) {
 		evco_yield();
 	}
@@ -34,7 +32,6 @@ void consumer(consumer_args_t *pargs)
 int main(int argc, char *argv[])
 {
 	evsc_t *psc = evsc_alloc();
-	evco_cond_t *pcond = evco_cond_alloc();
 	int x = count, iterations = iter_count;
 
 	unsigned long long start, end;

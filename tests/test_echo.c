@@ -120,9 +120,9 @@ int main(int argc, char *argv[])
 	args->fd = lfd;
 	evco_create(psc, STACK_SIZE, (evco_func)on_accept, args);
 	for ( x = 0 ; x < 10; x++ ) {
-		sleep_args_t *args = (sleep_args_t *)malloc(sizeof(sleep_args_t));
-		args->x = x;
-		evco_create(psc, STACK_SIZE, (evco_func)sleep_and_print, args);
+		sleep_args_t *xargs = (sleep_args_t *)malloc(sizeof(sleep_args_t));
+		xargs->x = x;
+		evco_create(psc, STACK_SIZE, (evco_func)sleep_and_print, xargs);
 	}
 	evco_dispatch(psc);
 _E1:

@@ -60,7 +60,7 @@ struct evco
 typedef struct fd_item
 {
 	int fd;
-	
+
 	struct event *ev_recv;
 	struct event *ev_send;
 
@@ -71,7 +71,7 @@ typedef struct fd_item
 typedef struct cond_item
 {
 	struct list_head entry;
-	int timeout_msec;	
+	int timeout_msec;
 	evco_t *pco;
 }cond_item_t;
 
@@ -520,7 +520,9 @@ evco_cond_t *evco_cond_alloc()
 
 int evco_cond_timedwait(evco_cond_t *pcond, int msec)
 {
-	cond_item_t item = {0};
+	cond_item_t item;
+	item.entry.prev = NULL;
+	item.entry.next = NULL;
 	item.pco = g_current_pco;
 	item.timeout_msec = msec;
 	if ( msec > 0 ) {
