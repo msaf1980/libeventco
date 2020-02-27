@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([FULL-PACKAGE-NAME], [VERSION], [BUG-REPORT-ADDRESS])
+AC_INIT([libevco], [0.1], [])
 #AC_CONFIG_SRCDIR([include/evco.h])
 #AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE
@@ -35,6 +35,6 @@ AC_CONFIG_FILES([Makefile
 AC_ARG_ENABLE([debug],
     [AS_HELP_STRING([--enable-debug],[debug program(default is no)])],
     [CFLAGS="${CFLAGS} -DDEBUG -g"],
-    [CFLAGS="-O2"])
+    [CFLAGS="${CFLAGS} -DNDEBUG"])
 
 AC_OUTPUT
