@@ -8,6 +8,9 @@
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
+#ifdef __APPLE__
+#define _XOPEN_SOURCE 600
+#endif
 #ifndef WIN32
 #include <ucontext.h>
 #else
