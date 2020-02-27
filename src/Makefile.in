@@ -252,7 +252,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AUTOMAKE_OPTIONS = foreign
-INCLUDES = -I../include
+AM_CPPFLAGS = -I../include
 noinst_LIBRARIES = libevco.a
 libevco_a_SOURCES = evco.c hashtab.c
 all: all-am

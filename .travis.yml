@@ -1,0 +1,23 @@
+script: make
+language: c
+
+matrix:
+  include:
+    - compiler: gcc
+      os: linux
+    - compiler: clang
+      os: linux
+    - compiler: clang
+      os: osx
+    # gcc is actually clang on OSX, so pointless to test twice
+
+script:
+  - |
+    if [ $TRAVIS_OS_NAME = osx ]; then
+      brew update > /dev/null
+      brew install libevent
+    else
+      sudo apt-get install libevent-dev
+    fi
+  - autoreconf -fi && ./configure
+  - make test
