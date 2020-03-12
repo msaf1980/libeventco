@@ -56,3 +56,14 @@ dkms.conf
 compile_commands.json
 *.log
 *.status
+
+test_*
+bench_*
+
+CMakeCache.txt
+CMakeFiles/
+CTestTestfile.cmake
+Makefile
+Testing/
+cmake_install.cmake
+config.h

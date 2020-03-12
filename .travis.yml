@@ -19,5 +19,4 @@ script:
     else
       sudo apt-get install libevent-dev
     fi
-  - autoreconf -fi && ./configure
-  - make test
+  - cmake . && cmake --build . && ctest -V
