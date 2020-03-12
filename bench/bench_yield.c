@@ -7,14 +7,15 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <errno.h>
 #include <time.h>
 #include "evco.h"
 
 #include "benchutils.h"
 
-int iter_count = 1000000000;
-int count = 100000;
+int64_t iter_count = 10000000000;
+int32_t count = 100000;
 
 typedef struct consumer_args {
 	int index;
@@ -32,7 +33,8 @@ void consumer(consumer_args_t *pargs)
 int main(int argc, char *argv[])
 {
 	evsc_t *psc = evsc_alloc();
-	int x = count, iterations = iter_count;
+	int32_t x = count;
+	int64_t iterations = iter_count;
 
 	unsigned long long start, end;
 
@@ -49,7 +51,7 @@ int main(int argc, char *argv[])
 	evco_dispatch(psc);
 
 	end = clock_ns();
-	printf("evco_yield (%d yields, %d coroutines): %llu\n", iterations, x, end - start);
+	printf("evco_yield (%ld yields, %d coroutines): %llu ns\n", iterations, x, end - start);
 
 	return 0;
 }
