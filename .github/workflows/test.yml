@@ -1,0 +1,46 @@
+name: tests
+
+on: [push]
+
+jobs:
+  build:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - {
+            name: "Ubuntu 20.04 GCC", artifact: "Linux.tar.xz",
+            os: ubuntu-20.04,
+            build_type: "Release", cc: "gcc", cxx: "g++"
+          }
+        - {
+            name: "Ubuntu 20.04 Clang", artifact: "Linux.tar.xz",
+            os: ubuntu-20.04,
+            build_type: "Release", cc: "clang", cxx: "clang++"
+          }
+        - {
+            name: "macOS 10.15 Clang", artifact: "macOS.tar.xz",
+            os: macos-10.15,
+            build_type: "Release", cc: "clang", cxx: "clang++"
+          }
+          
+    steps:
+    - uses: actions/checkout@v1
+    
+    - name: Dependecies
+      run:   |
+        if [ "$RUNNER_OS" == "Linux" ]; then
+          sudo apt-get install -y libevent-dev || exit 1
+        elif [ "$RUNNER_OS" == "macOS" ]; then
+          brew update > /dev/null
+          brew install libevent
+        else
+          echo "$RUNNER_OS not supported"
+          exit 1
+        fi
+      shell: bash
+    - name: Run tests
+      id: tests
+      run: cmake . && cmake --build . && ctest -V
