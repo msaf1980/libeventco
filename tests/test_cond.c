@@ -15,7 +15,7 @@ int count;
 void producer(evco_cond_t *pcond)
 {
 	while ( count > 0 ) {
-		evco_sleep(1000);
+		evco_sleep(200);
 		evco_cond_signal(pcond);
 		printf("producer: evco_cond_signal..\n");
 	}
@@ -31,7 +31,7 @@ void consumer(consumer_args_t *pargs)
 	int ret = 0;
 	int i = 0;
 	for ( i = 0; i < pargs->index * 5; i++ ) {
-		ret = evco_cond_timedwait(pargs->pcond, 4000);
+		ret = evco_cond_timedwait(pargs->pcond, 400);
 		if ( ret == 0 ) {
 			printf("consumer%02d: evco_cond_timedwait succeed...\n", pargs->index);
 		}	
