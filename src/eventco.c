@@ -20,7 +20,7 @@
 #include "list.h"
 #include "hashtab.h"
 #include "event2/event.h"
-#include "evco.h"
+#include "eventco.h"
 
 #ifdef DEBUG
     #define evco_debug(fmt, ...) \

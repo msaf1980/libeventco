@@ -4,9 +4,9 @@ include (CheckFunctionExists)
 include (CheckIncludeFiles)
 include (CheckSymbolExists)
 
-project (libevco)
-add_library(evco src/evco.c src/hashtab.c)
-target_link_libraries (evco event)
+project (libeventco)
+add_library(eventco src/eventco.c src/hashtab.c)
+target_link_libraries (eventco event)
 #set_target_properties(coro PROPERTIES COMPILE_DEFINITIONS "CORO_ASM=1")
 
 include_directories( include )
@@ -21,15 +21,15 @@ include_directories("${PROJECT_BINARY_DIR}")
 enable_testing()
 
 add_executable(test_echo tests/test_echo.c)
-target_link_libraries (test_echo evco)
+target_link_libraries (test_echo eventco)
 
 add_executable(test_proxy tests/test_proxy.c)
-target_link_libraries (test_proxy evco)
+target_link_libraries (test_proxy eventco)
 
 add_executable(test_cond tests/test_cond.c)
-target_link_libraries (test_cond evco)
+target_link_libraries (test_cond eventco)
 add_test(NAME test_cond COMMAND ${CMAKE_BINARY_DIR}/test_cond)
 
 add_executable(bench_yield bench/bench_yield.c bench/benchutils.c)
-target_link_libraries (bench_yield evco)
+target_link_libraries (bench_yield eventco)
 add_test(NAME bench_yield COMMAND ${CMAKE_BINARY_DIR}/bench_yield)

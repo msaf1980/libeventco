@@ -10,7 +10,8 @@
 #include <stdint.h>
 #include <errno.h>
 #include <time.h>
-#include "evco.h"
+
+#include "eventco.h"
 
 #include "benchutils.h"
 
