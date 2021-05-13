@@ -26,7 +26,7 @@ void on_read(on_read_args_t *args)
 	int fd = args->fd;
 	char buffer[128] = {0};
 	while ( 1 ) {
-		int ret = evco_timed_recv(fd, buffer, sizeof(buffer), 1000);
+		int ret = evco_timed_recv(fd, buffer, sizeof(buffer), 10000);
 		if ( ret <= 0 ) {
             if ( errno == ETIMEDOUT ) {
                 printf("recv timed out, continue.\n");
@@ -74,7 +74,7 @@ typedef struct sleep_args
 void sleep_and_print(sleep_args_t *args)
 {
 	while ( 1 ) {
-		evco_sleep(1000);
+		evco_sleep(100000);
 	    printf("%06d, I'm awake...\n", args->x);
 	}
 }

@@ -5,22 +5,21 @@
 	> Created Time: Tue 05 Dec 2017 04:50:17 AM PST
  ************************************************************************/
 
+#include <assert.h>
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
-#ifndef WIN32
-#include <ucontext.h>
-#else
 #include <sys/types.h>
 #include <sys/socket.h>
-#endif
 #include <unistd.h>
 
 #include "list.h"
 #include "hashtab.h"
 #include "event2/event.h"
 #include "eventco.h"
+
+#include <coro.h>
 
 #ifdef DEBUG
     #define evco_debug(fmt, ...) \
@@ -35,27 +34,19 @@ struct evsc
 	struct event_base *ev_base;
 	hashtab_t *fd_tb;
 	struct list_head cond_ready_queue;
+	struct evco *root;
 };
 
 struct evco
 {
-#ifdef WIN32
-	void *prev;
-	void *self;
-#else
-	ucontext_t prev;
-	ucontext_t self;
-#endif
+	struct evco *prev;
+	coro_context self;
+	struct coro_stack stack;
 	struct event *timer;
 	int flag_iotimeout;
 	int flag_running;
 	evsc_t *psc;
-	size_t stack_size;
-#ifdef WIN32
 	evco_func func;
-#else
-	char *stack;
-#endif
 };
 
 typedef struct fd_item
@@ -145,56 +136,29 @@ int __evco_cond_ready_clear(evsc_t *psc)
 	}
 }
 
-evsc_t *evsc_alloc()
-{
-	evsc_t *psc = (evsc_t *)malloc(sizeof(evsc_t));
-	psc->ev_base = event_base_new();
-	psc->fd_tb = hashtab_alloc();
-	INIT_LIST_HEAD(&psc->cond_ready_queue);
-#ifdef WIN32
-	ConvertThreadToFiber(NULL);
-#endif
-	return psc;
-}
 
-#ifdef WIN32
-#define __evco_free(pco) \
-do {							\
-	if ( !pco ) break;			\
-	if ( pco->timer ) {			\
-		event_del(pco->timer);	\
-		event_free(pco->timer); \
-	}							\
-	DeleteFiber(pco->self);		\
-	FREE_POINTER(pco);			\
+#define __evco_free(pco)          \
+do {							  \
+	if ( !pco ) break;			  \
+	if ( pco->timer ) {			  \
+		event_del(pco->timer);	  \
+		event_free(pco->timer);   \
+	}							  \
+	coro_destroy(&pco->self);	  \
+	coro_stack_free(&pco->stack); \
+	FREE_POINTER(pco);			  \
 } while ( 0 )
-#else
-#define __evco_free(pco) \
-do {							\
-	if ( !pco ) break;			\
-	if ( pco->timer ) {			\
-		event_del(pco->timer);	\
-		event_free(pco->timer); \
-	}							\
-	FREE_POINTER(pco->stack);	\
-	FREE_POINTER(pco);			\
-} while ( 0 )
-#endif
+
 
 #ifdef WIN32
 void CALLBACK __evco_entry(void *args)
+#else
+void __evco_entry(void *args)
+#endif
 {
 	g_current_pco->func(args);
 	g_current_pco->flag_running = 0;
 }
-#else
-void __evco_entry(evco_func func, void *args)
-{
-	func(args);
-	g_current_pco->flag_running = 0;
-}
-#endif
-
 
 static fd_item_t *__fd_item_alloc(evsc_t *psc, int fd)
 {
@@ -210,22 +174,20 @@ static fd_item_t *__fd_item_alloc(evsc_t *psc, int fd)
 static void __evco_resume(evco_t *pco)
 {
 	int ret = 0;
-	evco_t *prev_pco = g_current_pco;
+	assert(pco->prev != NULL);
+	pco->prev = g_current_pco;
 	g_current_pco = pco;
-#ifdef WIN32
-	pco->prev = GetCurrentFiber();
-	if ( pco->prev == NULL ) {
+	
+	if (pco->prev == NULL) {
 		ret = -1;
+	} else {
+		coro_transfer(&pco->prev->self, &pco->self);
+		ret = 0;
 	}
-	else{
-		SwitchToFiber(pco->self);
-	}
-#else
-	ret = swapcontext(&pco->prev, &pco->self);
-#endif
-	g_current_pco = prev_pco;
+
+	g_current_pco = pco->prev;
 	if ( ret != 0 ) {
-		evco_debug("swapcontext failed...\n");
+		evco_debug("__evco_resume failed...\n");
 		__evco_free(pco);		
 	}
 	else {
@@ -237,11 +199,7 @@ static void __evco_resume(evco_t *pco)
 static void inline __evco_yield()
 {
     g_current_pco->flag_iotimeout = 0;
-#ifdef WIN32
-	SwitchToFiber(g_current_pco->prev);
-#else
-	swapcontext(&g_current_pco->self, &g_current_pco->prev);
-#endif
+	coro_transfer(&g_current_pco->self, &g_current_pco->prev->self);
 }
 
 static void __evco_yield_by_fd(int fd, int flag, unsigned int to_msec)
@@ -319,43 +277,53 @@ void evco_sleep(int msec)
 	event_add(g_current_pco->timer, &tv);
 	__evco_yield();
 }
+
+static evco_t *__evco_create_main(evsc_t *psc)
+{
+	evco_t *pco;
+	assert(g_current_pco == NULL);
+	pco = (evco_t *)malloc(sizeof(evco_t));
+	if (pco == NULL) {
+		return NULL;
+	}
+	pco->func = NULL;
+	coro_create (&pco->self, NULL, NULL, NULL, 0);
+
+	pco->flag_running = 1;
+
+	pco->timer = NULL;
+	pco->psc = psc;
+
+	g_current_pco = pco;
+
+	return pco;
+}
+
 evco_t *evco_create(evsc_t *psc, size_t stack_size, evco_func func, void *args)
 {
+	void *stack;
 	evco_t *pco = (evco_t *)malloc(sizeof(evco_t));
-#ifdef WIN32
+	if (pco == NULL) {
+		return NULL;
+	}
 	pco->func = func;
-	pco->flag_running = 1;
-	pco->psc = psc;
-	pco->timer = NULL;
-	pco->self = CreateFiber(pco->stack_size, __evco_entry, args);
-	if ( pco->self == NULL ) {
-		evco_debug("CreateFiber failed...\n");
-		goto _E1;
-	}
-#else
-	if ( getcontext(&pco->self) == -1 ) {
-		evco_debug("getcontext faild..\n");
-		goto _E1;
-	}
-	pco->flag_running = 1;
-	pco->stack_size = round_up_to_page_size(stack_size);
-	pco->stack = (char *)malloc(pco->stack_size);
-	if (pco->stack == NULL) {
+	if (coro_stack_alloc(&pco->stack, stack_size) != 1) {
 		evco_debug("alloc stack failed...\n");
 		goto _E1;
-	}
-	pco->self.uc_stack.ss_sp = pco->stack;
-	pco->self.uc_stack.ss_size = pco->stack_size;
-	pco->self.uc_link = &pco->prev;
-	pco->psc = psc;
+	}	
+	coro_create (&pco->self, __evco_entry, args, pco->stack.sptr, pco->stack.ssze);
+
+	pco->flag_running = 1;
+
 	pco->timer = NULL;
-	makecontext(&pco->self, (void (*)(void))__evco_entry, 2, func, args);
-#endif
+	pco->psc = psc;
+	pco->prev = g_current_pco;
 	__evco_resume(pco);
 
 	return pco;
+
 _E1:
-	FREE_POINTER(pco);
+	__evco_free(pco);
 	return NULL;
 }
 
@@ -613,4 +581,33 @@ int evco_cond_free(evco_cond_t *pcond)
 	evco_cond_broadcast(pcond);
 	FREE_POINTER(pcond);
 	return 0;
+}
+
+evsc_t *evsc_alloc()
+{
+	evsc_t *psc;
+	assert(g_current_pco == NULL);
+	psc = (evsc_t *)malloc(sizeof(evsc_t));
+	if (psc != NULL) {
+		psc->ev_base = event_base_new();
+		psc->fd_tb = hashtab_alloc();
+		INIT_LIST_HEAD(&psc->cond_ready_queue);
+		psc->root = __evco_create_main(psc);
+		if (psc->ev_base == NULL || psc->fd_tb == NULL || psc->root == NULL) {
+			goto _E1;
+		}
+		g_current_pco = psc->root;
+	}
+	return psc;
+_E1:
+	event_base_free(psc->ev_base);
+	if (psc->root != NULL) {
+		__evco_free(psc->root);	
+	}
+	if (psc->fd_tb != NULL) {
+		hashtab_free(psc->fd_tb, free);
+	}
+	free(psc);
+	return NULL;
+
 }
