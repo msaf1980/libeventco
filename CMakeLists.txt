@@ -13,7 +13,7 @@ function(append_flag FLAGS_VAR FLAG_VAR CHECK_VAR)
     endif()
 endfunction()
     
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -W -Wall -Wextra -Werror")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -W -Wall -Wextra")
 
 string(TOLOWER "${CMAKE_BUILD_TYPE}" MODE)
 if (MODE STREQUAL "debug")
