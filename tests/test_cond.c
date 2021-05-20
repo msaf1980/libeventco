@@ -55,6 +55,9 @@ int main(int argc, char *argv[])
 
 	count = x;
 
+	(void) argc;
+	(void) argv;
+
 	evco_create(psc, STACK_SIZE, (evco_func)producer, pcond);
 	
 	for ( ; x > 0; x-- ) {

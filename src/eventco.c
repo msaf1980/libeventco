@@ -234,7 +234,7 @@ static void __evco_resume(evco_t *pco)
 		}
 	}
 }
-static void inline __evco_yield()
+static inline void __evco_yield()
 {
     g_current_pco->flag_iotimeout = 0;
 #ifdef WIN32
@@ -281,6 +281,8 @@ static void __evsc_fd_dispatch(int sockfd, short events, void *vitem)
 	evco_t **ppco = (evco_t **)vitem;
 	evco_t *pco = *ppco;
 	evsc_t *psc = NULL;
+	
+	(void) sockfd;
 	*ppco = NULL;
 	if ( pco == NULL ) {
 		return;
@@ -299,6 +301,9 @@ static void __evsc_timer_dispatch(int fd, short events, void *vitem)
 {
 	evco_t *pco = (evco_t *)vitem;
 	evsc_t *psc = pco->psc;
+
+	(void) fd;
+	(void) events;
 	pco->flag_iotimeout = 1;
 	__evco_resume(pco);
 	__evco_cond_ready_clear(psc);
@@ -463,7 +468,6 @@ int evco_recv(int fd, char *buffer, size_t size)
     return evco_timed_recv(fd, buffer, size, 0);
 }
 
-
 int evco_timed_send(int fd, char *buffer, size_t size, int msec)
 {
 	int ret = 0;
@@ -478,7 +482,7 @@ _SEND_START:
 	if ( errno == EAGAIN || errno == EWOULDBLOCK ) {
 #endif
 		evco_debug("send EAGAIN, will swap.\n");
-		__evco_yield_by_fd(fd, 1, 0);
+		__evco_yield_by_fd(fd, 1, msec);
         if ( g_current_pco->flag_iotimeout ) {
             errno = ETIMEDOUT;
             return -1;
