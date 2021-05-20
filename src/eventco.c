@@ -9,12 +9,18 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+
+#if __APPLE__
+#include <setjmp.h>
+#include <sys/ucontext.h>
+#else
 #ifndef WIN32
 #include <ucontext.h>
-#else
+#endif
+#endif
+
 #include <sys/types.h>
 #include <sys/socket.h>
-#endif
 #include <unistd.h>
 
 #include "list.h"

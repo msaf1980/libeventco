@@ -15,6 +15,10 @@ endfunction()
     
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -W -Wall -Wextra")
 
+if (APPLE)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-implicit-function-declaration")
+endif ()
+
 string(TOLOWER "${CMAKE_BUILD_TYPE}" MODE)
 if (MODE STREQUAL "debug")
     string(TOUPPER "${CMAKE_PROJECT_NAME}" PNAME)
