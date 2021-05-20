@@ -8,21 +8,23 @@
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <string.h>
 #ifndef WIN32
 #include <ucontext.h>
 #else
 #include <sys/types.h>
 #include <sys/socket.h>
 #endif
+#include <unistd.h>
 
 #include "list.h"
 #include "hashtab.h"
 #include "event2/event.h"
-#include "evco.h"
+#include "eventco.h"
 
 #ifdef DEBUG
     #define evco_debug(fmt, ...) \
-            printf("[%s:%04d]"fmt, __FILE__, __LINE__, ##__VA_ARGS__)
+            fprintf(stderr, "[%s:%04d]"fmt, __FILE__, __LINE__, ##__VA_ARGS__)
 #else
     #define evco_debug(fmt, ...)
 #endif
@@ -59,7 +61,7 @@ struct evco
 typedef struct fd_item
 {
 	int fd;
-	
+
 	struct event *ev_recv;
 	struct event *ev_send;
 
@@ -70,7 +72,7 @@ typedef struct fd_item
 typedef struct cond_item
 {
 	struct list_head entry;
-	int timeout_msec;	
+	int timeout_msec;
 	evco_t *pco;
 }cond_item_t;
 
@@ -104,6 +106,32 @@ do {								\
 	tv.tv_sec = msec/1000;			\
 	tv.tv_usec = (msec%1000)*1000;	\
 } while ( 0 )
+
+static unsigned get_page_size()
+{
+	static unsigned sz;
+	long retval;
+	if (sz > 0)
+		return sz;
+	retval = sysconf(_SC_PAGESIZE);
+	if (0 > retval) {
+		fprintf(stderr, "libevfibers: sysconf(_SC_PAGESIZE): %s",
+				strerror(errno));
+		abort();
+	}
+	sz = retval;
+	return sz;
+}
+
+static size_t round_up_to_page_size(size_t size)
+{
+	unsigned sz = get_page_size();
+	size_t remainder;
+	remainder = size % sz;
+	if (remainder == 0)
+		return size;
+	return size + sz - remainder;
+}
 
 int __evco_cond_ready_clear(evsc_t *psc)
 {
@@ -276,6 +304,11 @@ static void __evsc_timer_dispatch(int fd, short events, void *vitem)
 	__evco_cond_ready_clear(psc);
 }
 
+void evco_yield()
+{
+	__evco_yield();
+}
+
 void evco_sleep(int msec)
 {
 	struct timeval tv;
@@ -292,10 +325,9 @@ evco_t *evco_create(evsc_t *psc, size_t stack_size, evco_func func, void *args)
 #ifdef WIN32
 	pco->func = func;
 	pco->flag_running = 1;
-	pco->stack_size = stack_size;
 	pco->psc = psc;
 	pco->timer = NULL;
-	pco->self = CreateFiber(stack_size, __evco_entry, args);
+	pco->self = CreateFiber(pco->stack_size, __evco_entry, args);
 	if ( pco->self == NULL ) {
 		evco_debug("CreateFiber failed...\n");
 		goto _E1;
@@ -306,17 +338,21 @@ evco_t *evco_create(evsc_t *psc, size_t stack_size, evco_func func, void *args)
 		goto _E1;
 	}
 	pco->flag_running = 1;
-	pco->stack = (char *)malloc(stack_size);
-	pco->stack_size = stack_size;
+	pco->stack_size = round_up_to_page_size(stack_size);
+	pco->stack = (char *)malloc(pco->stack_size);
+	if (pco->stack == NULL) {
+		evco_debug("alloc stack failed...\n");
+		goto _E1;
+	}
 	pco->self.uc_stack.ss_sp = pco->stack;
-	pco->self.uc_stack.ss_size = stack_size;
+	pco->self.uc_stack.ss_size = pco->stack_size;
 	pco->self.uc_link = &pco->prev;
 	pco->psc = psc;
 	pco->timer = NULL;
 	makecontext(&pco->self, (void (*)(void))__evco_entry, 2, func, args);
 #endif
 	__evco_resume(pco);
-	
+
 	return pco;
 _E1:
 	FREE_POINTER(pco);
@@ -514,7 +550,9 @@ evco_cond_t *evco_cond_alloc()
 
 int evco_cond_timedwait(evco_cond_t *pcond, int msec)
 {
-	cond_item_t item = {0};
+	cond_item_t item;
+	item.entry.prev = NULL;
+	item.entry.next = NULL;
 	item.pco = g_current_pco;
 	item.timeout_msec = msec;
 	if ( msec > 0 ) {
