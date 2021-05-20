@@ -1,0 +1,69 @@
+container:
+  image: ubuntu:bionic
+
+task:
+  matrix:
+    - name: Build on Ubuntu (gcc, release)
+      install_dependencies_script:
+        - apt-get update
+        - apt-get install -y cmake gcc g++ libevent-dev
+      script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release
+      container:
+        matrix:
+          - image: ubuntu:20.04
+          - image: ubuntu:16.04
+          - image: ubuntu:18.04
+    - name: Build on Ubuntu (gcc, debug)
+      install_dependencies_script:
+        - apt-get update
+        - apt-get install -y cmake gcc g++ libevent-dev
+      script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Debug
+      container:
+        matrix:
+          - image: ubuntu:20.04
+          - image: ubuntu:16.04
+          - image: ubuntu:18.04
+    - name: Build on CentOS (gcc, release)
+      install_dependencies_script:
+        - yum install -y cmake make gcc gcc-c++ libevent-devel
+      script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release
+      container:
+        matrix:
+          - image: centos:8
+          - image: centos:7
+    - name: Build on CentOS (gcc, debug)
+      install_dependencies_script:
+        - yum install -y cmake make gcc gcc-c++ libevent-devel
+      script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Debug
+      container:
+        matrix:
+          - image: centos:8
+          - image: centos:7
+    - name: Build on FreeBSD (debug)
+      install_dependencies_script:
+        - pkg install -y cmake gmake bash libevent
+      script: bash ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Debug
+      freebsd_instance:
+        matrix:
+          #- image: freebsd-12-1-release-amd64
+          - image: freebsd-11-4-release-amd64
+    - name: Build on FreeBSD (release)
+      install_dependencies_script:
+        - pkg install -y cmake gmake bash libevent
+      script: bash ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release
+      freebsd_instance:
+        matrix:
+          #- image: freebsd-12-1-release-amd64
+          - image: freebsd-11-4-release-amd64
+    - name: Build on MacOS Catalina (release)
+      install_dependencies_script:
+        -  brew install cmake libevent
+      script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release
+      macos_instance:
+          image: catalina-xcode-12.2
+    - name: Build on MacOS Big Sur (release)
+      install_dependencies_script:
+        -  brew install cmake libevent
+      script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release
+      macos_instance:
+          image: big-sur-xcode-12.5
