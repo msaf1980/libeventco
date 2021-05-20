@@ -23,6 +23,10 @@ if (MODE STREQUAL "debug")
     add_definitions("-DDEBUG")
 endif ()
 
+if (UNIX)
+    include_directories("/usr/local/include")
+endif ()
+
 add_library(eventco src/eventco.c src/hashtab.c)
 target_link_libraries (eventco event)
 
