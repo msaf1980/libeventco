@@ -25,6 +25,7 @@ endif ()
 
 if (UNIX)
     include_directories("/usr/local/include")
+    link_directories("/usr/local/lib")
 endif ()
 
 add_library(eventco src/eventco.c src/hashtab.c)
