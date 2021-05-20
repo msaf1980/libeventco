@@ -68,6 +68,8 @@ int main(int argc, char *argv[])
 	}
 
 	evco_dispatch(psc);
+	evco_cond_free(pcond);
+	evsc_free(psc);
 
 	return 0;
 }

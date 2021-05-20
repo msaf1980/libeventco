@@ -107,6 +107,27 @@ static void __evsc_timer_dispatch(int fd, short events, void *vitem);
 
 static void __evco_resume(evco_t *pco);
 
+static fd_item_t *__fd_item_alloc(evsc_t *psc, int fd)
+{
+	fd_item_t *pitem = (fd_item_t *)malloc(sizeof(fd_item_t));
+	pitem->fd = fd;
+	pitem->evco_recv = NULL;
+	pitem->evco_send = NULL;
+	pitem->ev_recv = event_new(psc->ev_base, fd, EV_READ, __evsc_fd_dispatch, &pitem->evco_recv);
+	pitem->ev_send = event_new(psc->ev_base, fd, EV_WRITE, __evsc_fd_dispatch, &pitem->evco_send);
+	return pitem;
+}
+
+void __fd_item_free(void *p)
+{
+	fd_item_t *pitem = (fd_item_t *) p;
+	event_del(pitem->ev_recv);
+	event_del(pitem->ev_send);
+	event_free(pitem->ev_recv);
+	event_free(pitem->ev_send);
+	FREE_POINTER(pitem);
+}
+
 #define msec2tv(msec, tv) \
 do {								\
 	tv.tv_sec = msec/1000;			\
@@ -163,6 +184,14 @@ evsc_t *evsc_alloc()
 	return psc;
 }
 
+void evsc_free(evsc_t *psc)
+{
+	event_base_free(psc->ev_base);
+	hashtab_free(psc->fd_tb, __fd_item_free);
+	free(psc->fd_tb);
+	free(psc);
+}
+
 #ifdef WIN32
 #define __evco_free(pco) \
 do {							\
@@ -200,18 +229,6 @@ void __evco_entry(evco_func func, void *args)
 	g_current_pco->flag_running = 0;
 }
 #endif
-
-
-static fd_item_t *__fd_item_alloc(evsc_t *psc, int fd)
-{
-	fd_item_t *pitem = (fd_item_t *)malloc(sizeof(fd_item_t));
-	pitem->fd = fd;
-	pitem->evco_recv = NULL;
-	pitem->evco_send = NULL;
-	pitem->ev_recv = event_new(psc->ev_base, fd, EV_READ, __evsc_fd_dispatch, &pitem->evco_recv);
-	pitem->ev_send = event_new(psc->ev_base, fd, EV_WRITE, __evsc_fd_dispatch, &pitem->evco_send);
-	return pitem;
-}
 
 static void __evco_resume(evco_t *pco)
 {
@@ -503,15 +520,6 @@ _SEND_START:
 int evco_send(int fd, char *buffer, size_t size) 
 {
     return evco_timed_send(fd, buffer, size, 0);
-}
-
-void __fd_item_free(fd_item_t *pitem)
-{
-	event_del(pitem->ev_recv);
-	event_del(pitem->ev_send);
-	event_free(pitem->ev_recv);
-	event_free(pitem->ev_send);
-	FREE_POINTER(pitem);
 }
 
 int evco_close(int fd)

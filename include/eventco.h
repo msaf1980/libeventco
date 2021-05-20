@@ -46,6 +46,7 @@ int evco_send(int fd, char *buffer, size_t size);
 int evco_close(int fd);
 
 evsc_t *evsc_alloc();
+void evsc_free(evsc_t *psc);
 
 evsc_t *evco_get_sc();
 
