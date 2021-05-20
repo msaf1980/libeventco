@@ -55,15 +55,15 @@ task:
         matrix:
           #- image: freebsd-12-1-release-amd64
           - image: freebsd-11-4-release-amd64
-    - name: Build on MacOS Catalina (release)
-      install_dependencies_script:
-        -  brew install cmake libevent
-      script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release
-      macos_instance:
-          image: catalina-xcode-12.2
-    - name: Build on MacOS Big Sur (release)
-      install_dependencies_script:
-        -  brew install cmake libevent
-      script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release
-      macos_instance:
-          image: big-sur-xcode-12.5
+#    - name: Build on MacOS Catalina (release)
+#      install_dependencies_script:
+#        -  brew install cmake libevent
+#      script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release
+#      macos_instance:
+#          image: catalina-xcode-12.2
+#    - name: Build on MacOS Big Sur (release)
+#      install_dependencies_script:
+#        -  brew install cmake libevent
+#      script: ./ci/run_tests.sh -DCMAKE_BUILD_TYPE=Release
+#      macos_instance:
+#          image: big-sur-xcode-12.5
